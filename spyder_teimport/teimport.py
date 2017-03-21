@@ -16,7 +16,7 @@ import tempfile, shutil, errno
 from xml.etree import ElementTree
 from spyder.config.base import get_translation
 from spyder.config.main import CONF
-from spyder.plugins import SpyderPluginMixin
+from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
 from spyder.py3compat import getcwd, is_text_string, to_text_string
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QApplication, QMessageBox, QMenu
@@ -37,11 +37,6 @@ except ImportError:
 
 _ = get_translation("teImport", dirname="spyder_teimport")
 
-class DummyDock(object):
-
-    def close(self):
-        pass
-
 class teImport(SpyderPluginMixin):
     """teImport script"""
     CONF_SECTION = 'teImport'
@@ -49,7 +44,8 @@ class teImport(SpyderPluginMixin):
     
     def __init__(self, main):
         super(teImport, self).__init__(main)
-        self.dockwidget = DummyDock()
+        self.dockwidget = SpyderDockWidget(self.get_plugin_title(), main)
+        self.dockwidget.hide()
         
     #------ SpyderPluginWidget API --------------------------------------------
     def get_plugin_title(self):
