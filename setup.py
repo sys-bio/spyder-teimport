@@ -16,7 +16,7 @@ def get_readme():
 REQUIREMENTS = ['phrasedml'] #'tellurium'
 
 setup(
-    name='spyder.teimport',
+    name='spyder_teimport',
     version='1.0.0',
     packages=['spyder_teimport'],
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
