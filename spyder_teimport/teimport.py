@@ -15,12 +15,12 @@ import zipfile
 import tempfile, shutil, errno
 from xml.etree import ElementTree
 from spyder.config.base import get_translation
-from spyder.config.main import CONF
+from spyder.config.utils import (get_filter, get_edit_filters, 
+                                 get_edit_filetypes)
 from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
 from spyder.py3compat import getcwd, is_text_string, to_text_string
-from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QApplication, QMessageBox, QMenu
-from qtpy.compat import getopenfilenames
+from qtpy.QtWidgets import QApplication, QMessageBox, QMenu, QAction
+from qtpy.compat import getopenfilenames, from_qvariant
 from spyder.utils import encoding, sourcecode
 from spyder.utils.qthelpers import create_action, add_actions
 from spyder.widgets.sourcecode.codeeditor import CodeEditor
@@ -82,6 +82,11 @@ class teImport(SpyderPluginMixin):
         add_actions(import_menu, all_actions)
         self.main.file_menu_actions.insert(6, import_menu)
 
+    def on_first_registration(self):
+        """Action to be performed on first plugin registration"""
+        self.main.tabify_plugins(self.main.help, self)
+        self.dockwidget.hide()        
+        
     def closing_plugin(self, cancelable=False):
         """Perform actions before parent main window is closed"""
         return True
@@ -96,34 +101,53 @@ class teImport(SpyderPluginMixin):
         if action == 'c2p' or action == 'c2pwp' or action == 's2p' or action == 's2pwp':
             editorwindow = None #Used in editor.load
             processevents = True  #Used in editor.load
+            goto = None
+            word = ''
+            
             editor = self.main.editor
-            basedir = getcwd()
-            if CONF.get('workingdir', 'editor/open/browse_scriptdir'):
+            editor0 = editor.get_current_editor()
+            if editor0 is not None:
+                position0 = editor0.get_position('cursor')
+                filename0 = editor.get_current_filename()
+            else:
+                position0, filename0 = None, None
+            # Recent files action
+            raction = editor.sender()
+            if isinstance(raction, QAction):
+                filenames = from_qvariant(raction.data(), to_text_string)
+            if not filenames:
+                basedir = getcwd()
+                if editor.edit_filetypes is None:
+                    editor.edit_filetypes = get_edit_filetypes()
+                if editor.edit_filters is None:
+                    editor.edit_filters = get_edit_filters()
+    
                 c_fname = editor.get_current_filename()
                 if c_fname is not None and c_fname != editor.TEMPFILE_PATH:
                     basedir = os.path.dirname(c_fname)
-            editor.redirect_stdio.emit(False)
-            parent_widget = editor.get_current_editorstack()
-            selectedfilter = ''
-            if action == 'c2p' or action == 'c2pwp':
-                filters = 'Combine archives (*.zip *.omex);;All files (*.*)'
-                filenames, _selfilter = getopenfilenames(parent_widget,
-                                         _("Open combine archive"), basedir, filters,
-                                         selectedfilter=selectedfilter)
-            else:
-                filters = 'SED-ML files (*.sedml *.xml);;All files (*.*)'
-                filenames, _selfilter = getopenfilenames(parent_widget,
-                                         _("Open SED-ML file"), basedir, filters,
-                                         selectedfilter=selectedfilter)
-            editor.redirect_stdio.emit(True)
-            if filenames:
-                filenames = [os.path.normpath(fname) for fname in filenames]
-                if CONF.get('workingdir', 'editor/open/auto_set_to_basedir'):
-                    directory = os.path.dirname(filenames[0])
-                    editor.emit(Signal("open_dir(QString)"), directory)
-            else:
-                #The file dialog box was closed without selecting a file.
-                return
+                editor.redirect_stdio.emit(False)
+                parent_widget = editor.get_current_editorstack()
+                if filename0 is not None:
+                    selectedfilter = get_filter(editor.edit_filetypes,
+                                                os.path.splitext(filename0)[1])
+                else:
+                    selectedfilter = ''
+                if action == 'c2p' or action == 'c2pwp':
+                    filters = 'Combine archives (*.zip *.omex);;All files (*.*)'
+                    filenames, _selfilter = getopenfilenames(parent_widget,
+                                             _("Open combine archive"), basedir, filters,
+                                             selectedfilter=selectedfilter)
+                else:
+                    filters = 'SED-ML files (*.sedml *.xml);;All files (*.*)'
+                    filenames, _selfilter = getopenfilenames(parent_widget,
+                                             _("Open SED-ML file"), basedir, filters,
+                                             selectedfilter=selectedfilter)
+                editor.redirect_stdio.emit(True)
+                if filenames:
+                    filenames = [os.path.normpath(fname) for fname in filenames]
+                else:
+                    return
+            
             focus_widget = QApplication.focusWidget()
             if editor.dockwidget and not editor.ismaximized and\
                (not editor.dockwidget.isAncestorOf(focus_widget)\
@@ -146,6 +170,11 @@ class teImport(SpyderPluginMixin):
             else:
                 filenames = [_convert(fname) for fname in list(filenames)]
             
+            if isinstance(goto, int):
+                goto = [goto]
+            elif goto is not None and len(goto) != len(filenames):
+                goto = None
+            
             for index, filename in enumerate(filenames):
                 if action == 'c2p' or action == 'c2pwp':
                     p = re.compile( '(.zip$|.omex$)')
@@ -163,11 +192,8 @@ class teImport(SpyderPluginMixin):
                         if (pythonfile == filename):
                             pythonfile = filename + "_phrasedml.py"
                 current_editor = editor.set_current_filename(pythonfile, editorwindow)
-                if current_editor is not None:
-                    # -- TODO:  Do not open an already opened file
-                    pass
-                else:
-                    # -- Not an existing opened file:
+                if current_editor is None:
+                    # -- Not a valid filename:
                     if not os.path.isfile(filename):
                         continue
                     # --
@@ -180,11 +206,12 @@ class teImport(SpyderPluginMixin):
                     finfo.path = editor.main.get_spyder_pythonpath()
                     editor._clone_file_everywhere(finfo)
                     current_editor = current_es.set_current_filename(newname)
-                    #if (current_editor is not None):
-                    #    editor.register_widget_shortcuts("Editor", current_editor)
                     
                     current_es.analyze_script()
-    
+                if goto is not None: # 'word' is assumed to be None as well
+                    current_editor.go_to_line(goto[index], word=word)
+                    position = current_editor.get_position('cursor')
+                    editor.cursor_moved(filename0, position0, filename, position)
                 if (current_editor is not None):
                     current_editor.clearFocus()
                     current_editor.setFocus()
