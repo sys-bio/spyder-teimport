@@ -357,7 +357,15 @@ def Translatecombine2P(combine):
             
         for i in range(len(sbmlloclist)):
             sbml = te.readFromFile(zipextloc + sbmlloclist[i])
-            sbmlstrlist.append(te.sbmlToAntimony(sbml))
+            try:
+                transtext = te.sbmlToAntimony(sbml)
+            except Exception as e:
+                transtext = """*********************WARNING*********************
+Failed to translate the SBML model to Antimony string.
+Please check that the SBML file is valid.
+*********************WARNING*********************"""
+                transtext = transtext + "\n\n" + str(e)
+            sbmlstrlist.append(transtext)
         for j in range(len(sedmlloclist)):
             sedmlstr = te.sedmlToPython(zipextloc + sedmlloclist[j])
             lines = sedmlstr.splitlines()
@@ -404,7 +412,15 @@ def Translatecombine2WP(combine):
         zipextloc, sbmlloclist, sedmlloclist = manifestsearch(combine)
         for i in range(len(sbmlloclist)):
             sbml = te.readFromFile(zipextloc + sbmlloclist[i])
-            sbmlstrlist.append(te.sbmlToAntimony(sbml))
+            try:
+                transtext = te.sbmlToAntimony(sbml)
+            except Exception as e:
+                transtext = """*********************WARNING*********************
+Failed to translate the SBML model to Antimony string.
+Please check that the SBML file is valid.
+*********************WARNING*********************"""
+                transtext = transtext + "\n\n" + str(e)
+            sbmlstrlist.append(transtext)
         for j in range(len(sedmlloclist)):
             sedmlstr = pl.convertFile(zipextloc + sedmlloclist[j])
             sedmlstr = sedmlstr.replace('"compartment"', '"compartment_"')
