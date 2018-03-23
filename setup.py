@@ -17,7 +17,7 @@ REQUIREMENTS = ['phrasedml'] #'tellurium'
 
 setup(
     name='spyder_teimport',
-    version='1.1.0',
+    version='1.1.1',
     packages=['spyder_teimport'],
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
     install_requires=REQUIREMENTS,
@@ -27,7 +27,7 @@ setup(
     author_email='',
     maintainer='Sauro Lab',
     maintainer_email='',
-    description='teImport plugin for Spyder 3.0+',
+    description='teImport plugin for Spyder 3.2.0+',
     long_description=get_readme(),
     classifiers=[
         'Development Status :: 4 - Beta',
