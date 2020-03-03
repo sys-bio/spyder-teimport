@@ -17,7 +17,7 @@ REQUIREMENTS = ['phrasedml'] #'tellurium'
 
 setup(
     name='spyder_teimport',
-    version='1.1.1',
+    version='1.1.2',
     packages=['spyder_teimport'],
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
     install_requires=REQUIREMENTS,
