@@ -17,13 +17,14 @@ from xml.etree import ElementTree
 from spyder.config.base import get_translation
 from spyder.config.utils import (get_filter, get_edit_filters, 
                                  get_edit_filetypes)
-from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
+from spyder.api.plugins import SpyderPluginWidget
+from spyder.widgets.dock import SpyderDockWidget
 from spyder.py3compat import getcwd, is_text_string, to_text_string
 from qtpy.QtWidgets import QApplication, QMessageBox, QMenu, QAction
 from qtpy.compat import getopenfilenames, from_qvariant
 from spyder.utils import encoding, sourcecode
 from spyder.utils.qthelpers import create_action, add_actions
-from spyder.widgets.sourcecode.codeeditor import CodeEditor
+from spyder.plugins.editor.widgets.codeeditor import CodeEditor
 
 try:
     import tellurium as te
@@ -37,7 +38,7 @@ except ImportError:
 
 _ = get_translation("teImport", dirname="spyder_teimport")
 
-class teImport(SpyderPluginMixin):
+class teImport(SpyderPluginWidget):
     """teImport script"""
     CONF_SECTION = 'teImport'
     CONFIGWIDGET_CLASS = None
@@ -149,7 +150,7 @@ class teImport(SpyderPluginMixin):
                     return
             
             focus_widget = QApplication.focusWidget()
-            if editor.dockwidget and not editor.ismaximized and\
+            if editor.dockwidget and\
                (not editor.dockwidget.isAncestorOf(focus_widget)\
                 and not isinstance(focus_widget, CodeEditor)):
                 editor.dockwidget.setVisible(True)
