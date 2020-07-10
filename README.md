@@ -1,10 +1,10 @@
 # spyder-teimport
-Tellurium Import plugin for Spyder 3.2.0+
+Tellurium Import plugin for Spyder 4.1.0+
 
 Copyright (c) 2020 Kiri Choi
 
 ## Introduction
-spyder-teimport is a plugin for [Spyder IDE](https://github.com/spyder-ide/spyder) version 3 and over. 
+spyder-teimport is a plugin for [Spyder IDE](https://github.com/spyder-ide/spyder) version 4 and over. 
 
 The plugin adds set of functions to directly import either a COMBINE archive or SED-ML files and translates the contents into executable Python scripts. 
 For both COMBINE archive and SED-ML files, users can import it as full Python script utilizing tesedml module in [Tellurium](http://tellurium.analogmachine.org/), 
